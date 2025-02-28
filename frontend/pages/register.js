@@ -4,40 +4,42 @@ import Head from 'next/head'
 import Image from 'next/image'
 
 export default function Register() {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: '',
-    password: '',
-    gender: '',
-    nik: '',
-    npwp: ''
-  })
-  const router = useRouter()
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+    //const [sp2dktoken, setSp2dktoken] = useState("")
+    const [formData, setFormData] = useState({
+        firstname: '',
+        lastname: '',
+        email: '',
+        nik: '',
+        username: '',
+        password: '',
+        npwp: '',
+        gender: '',
     })
-  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    const response = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    })
-    
-    if (response.ok) {
-      router.push('/success')
-    } else {
-      console.error('Registration failed')
+    const router = useRouter()
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        })
     }
-  }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then((res) => {
+            if (res.ok)
+                router.push('/suksesregister')
+            else
+                console.error('Registration failed')
+        })
+  
+   }
 
   return (
     <>
@@ -56,11 +58,11 @@ export default function Register() {
               <div key={index} className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
                 <input
-                  type={field === 'password' ? 'password' : 'text'}
-                  name={field}
+                  type={field.toLowerCase() === 'password' ? 'password' : 'text'}
+                  name={field.toLowerCase()}
                   className="w-full mt-2 p-3 border border-gray-300 rounded-md"
                   placeholder={`Enter your ${field}`}
-                  value={formData[field]}
+                  value={formData[field.toLowerCase()]}
                   onChange={handleChange}
                 />
               </div>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
 import Image from 'next/image';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import Modal from 'react-modal';
@@ -7,33 +8,58 @@ import { LogOut } from "lucide-react";
 
 Modal.setAppElement('#__next');
 
-const Navbar = () => {
-  return (
-    <nav className="bg-gray-900 text-white p-4 flex justify-between items-center">
-      <div className="text-xl font-bold">Dashboard</div>
-      <Button variant="ghost" className="flex items-center gap-2">
-        <LogOut size={18} /> Logout
-      </Button>
-    </nav>
-  );
-};
-
 export default function Dashboard() {
-  const [activeMenu, setActiveMenu] = useState('Lapor Pajak');
-  const [data, setData] = useState([
-    { id: 1, name: 'John Doe', type: 'Personal', status: 'Active' },
-    { id: 2, name: 'Jane Smith', type: 'Business', status: 'Pending' },
-  ]);
+    const [activeMenu, setActiveMenu] = useState('Lapor Pajak');
+    const router = useRouter()
+
+    const logoutClick = async () => {
+        const response = await fetch('/api/logout')
+
+        if (!response.ok)
+            console.error('Logout failed')
+        else
+            router.push('/')
+    }
+    
+    const Navbar = () => {
+      return (
+        <nav className="bg-gray-900 text-white p-4 flex justify-between items-center">
+          <div className="text-xl font-bold">Dashboard</div>
+          <Button variant="ghost" className="flex items-center gap-2" onClick={logoutClick}>
+            <LogOut size={18} /> Logout
+          </Button>
+        </nav>
+      );
+    };
+
+    /*
+    const [data, setData] = useState([}</td>
+                    <td className="border text-gray-900 p-3">{item.status}</td>
+                    <td className="border text-gray-900 p-3 flex justify-c
+        { id: 1, name: 'John Doe', type: 'Personal', status: 'Active' },
+        { id: 2, name: 'Jane Smith', type: 'Business', status: 'Pending' },
+    ]);
+    */
+
+    const [data, setData] = useState([])
+
+    useEffect(() => {
+        fetch('api/getalldata')
+        .then((res) => res.json())
+        .then((resdata) => {
+            setData(resdata)
+        })
+    },[])
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedData, setSelectedData] = useState(null);
-  const [formData, setFormData] = useState({ name: '', type: '', status: '' });
+  const [formData, setFormData] = useState({ nama: '', tipe: '', status: '' });
 
   const openModal = (type, item = null) => {
     setModalType(type);
     setSelectedData(item);
-    setFormData(item || { name: '', type: '', status: '' });
+    setFormData(item || { nama: '', tipe: '', status: '' });
     setIsModalOpen(true);
   };
 
@@ -47,18 +73,46 @@ export default function Dashboard() {
   };
 
   const handleAddData = () => {
-    setData([...data, { id: data.length + 1, ...formData }]);
-    closeModal();
+      setData([...data, { id: data.length + 1, ...formData }]);
+      fetch('api/tambah',{
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+      })
+      .then((res) => {
+          if (!res.ok)
+              console.log('Gagal tambah data')
+      })
+      
+      closeModal();
   };
 
   const handleEditData = () => {
-    setData(data.map(item => (item.id === selectedData.id ? { ...item, ...formData } : item)));
-    closeModal();
+      setData(data.map(item => (item.id === selectedData.id ? { ...item, ...formData } : item)));
+      fetch('api/edit',{
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+      })
+      .then((res) => {
+          if (!res.ok)
+              console.log('Gagal edit data')
+      })
+      closeModal();
   };
 
   const handleDelete = (id) => {
-    setData(data.filter(item => item.id !== id));
-    closeModal();
+      setData(data.filter(item => item.id !== id));
+      fetch('api/hapus',{
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+      })
+      .then((res) => {
+          if (!res.ok)
+              console.log('Gagal hapus data')
+      })
+      closeModal();
   };
 
   return (
@@ -110,8 +164,8 @@ export default function Dashboard() {
                 {data.map((item) => (
                   <tr key={item.id} className="text-center">
                     <td className="border text-gray-900 p-3">{item.id}</td>
-                    <td className="border text-gray-900 p-3">{item.name}</td>
-                    <td className="border text-gray-900 p-3">{item.type}</td>
+                    <td className="border text-gray-900 p-3">{item.nama}</td>
+                    <td className="border text-gray-900 p-3">{item.tipe}</td>
                     <td className="border text-gray-900 p-3">{item.status}</td>
                     <td className="border text-gray-900 p-3 flex justify-center gap-3">
                       <button className="text-yellow-500 hover:text-yellow-700" onClick={() => openModal('edit', item)}>
@@ -138,8 +192,8 @@ export default function Dashboard() {
         {modalType === 'add' || modalType === 'edit' ? (
           <>
             <h2 className="text-xl text-indigo-900 font-bold mb-4">{modalType === 'add' ? 'Tambah Data' : 'Edit Data'}</h2>
-            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Nama" className="w-full border p-2 rounded mb-2" />
-            <input type="text" name="type" value={formData.type} onChange={handleInputChange} placeholder="Tipe" className="w-full border p-2 rounded mb-2" />
+            <input type="text" name="nama" value={formData.nama} onChange={handleInputChange} placeholder="Nama" className="w-full border p-2 rounded mb-2" />
+            <input type="text" name="tipe" value={formData.tipe} onChange={handleInputChange} placeholder="Tipe" className="w-full border p-2 rounded mb-2" />
             <input type="text" name="status" value={formData.status} onChange={handleInputChange} placeholder="Status" className="w-full border p-2 rounded mb-4" />
             <button onClick={modalType === 'add' ? handleAddData : handleEditData} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 w-full">
               {modalType === 'add' ? 'Tambahkan' : 'Simpan Perubahan'}
@@ -147,7 +201,7 @@ export default function Dashboard() {
           </>
         ) : modalType === 'delete' && selectedData ? (
           <>
-            <h2 className="text-xl text-indigo-900 font-bold mb-4">Hapus Data {selectedData.name}?</h2>
+            <h2 className="text-xl text-indigo-900 font-bold mb-4">Hapus Data {selectedData.nama}?</h2>
             <button onClick={() => handleDelete(selectedData.id)} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 w-full">Hapus</button>
           </>
         ) : null}
